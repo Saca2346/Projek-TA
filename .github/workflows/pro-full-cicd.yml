@@ -10,7 +10,7 @@ on:
 
 jobs:
   # =======================================================
-  # 1) LINT (boleh di-skip kalau belum ada tooling)
+  # 1) LINT (opsional – tidak akan fail kalau belum ada lint)
   # =======================================================
   lint:
     name: 🔍 Lint Code
@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20   # ❌ TANPA cache: npm
 
       - name: Install dependencies (if package.json exists)
         run: |
@@ -41,7 +41,7 @@ jobs:
               echo "lint script found, running npm run lint..."
               npm run lint || echo "Lint failed (ignored for now)."
             else
-              echo "No lint script, skipping."
+              echo "No lint script defined, skipping lint."
             fi
           else
             echo "No package.json, skipping lint."
@@ -80,14 +80,14 @@ jobs:
               echo "test script found, running npm test..."
               npm test || echo "Tests failed (ignored for now)."
             else
-              echo "No test script, skipping."
+              echo "No test script defined, skipping tests."
             fi
           else
             echo "No package.json, skipping tests."
           fi
 
   # =======================================================
-  # 3) BUILD (opsional – untuk Vite/React/Tailwind nanti)
+  # 3) BUILD (opsional – untuk nanti kalau pakai Vite/React/Tailwind)
   # =======================================================
   build:
     name: 🏗️ Build Project
@@ -102,7 +102,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies (if package.json exists)
         run: |
@@ -120,46 +119,14 @@ jobs:
               echo "build script found, running npm run build..."
               npm run build || echo "Build failed (ignored for now)."
             else
-              echo "No build script, skipping."
+              echo "No build script defined, skipping build."
             fi
           else
             echo "No package.json, skipping build."
           fi
 
-      # Untuk sekarang, karena web kamu statis, kita upload seluruh repo sebagai artifact
-      - name: Upload build artifact (repo contents)
+      - name: Upload build artifact (repo contents for reference)
         uses: actions/upload-artifact@v4
         with:
           name: build-dist
           path: .
-
-  # =======================================================
-  # 4) DEPLOY KE FIREBASE HOSTING
-  # =======================================================
-  deploy:
-    name: 🚀 Deploy to Firebase Hosting
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-dist
-          path: .
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Create Firebase credentials from GitHub secret
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
-        run: |
-          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > firebase-key.json
-
-      - name: Deploy to Firebase Hosting
-        run: |
-          firebase deploy --only hosting --project power-monitor-ina219
