@@ -1,0 +1,28 @@
+name: Simple Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Create Firebase credentials from GitHub secret
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > firebase-key.json
+
+      - name: Deploy to Firebase Hosting
+        run: |
+          firebase deploy --only hosting --project power-monitor-ina219
