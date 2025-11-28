@@ -130,3 +130,27 @@ jobs:
         with:
           name: build-dist
           path: .
+
+  deploy:
+    name: 🚀 Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    needs: build   # deploy hanya jalan kalau build sukses
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Create Firebase credentials file
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > "$GITHUB_WORKSPACE/firebase-key.json"
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      - name: Deploy to Firebase Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
+        run: |
+          firebase deploy --only hosting --project power-monitor-ina219
