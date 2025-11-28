@@ -19,10 +19,12 @@ jobs:
 
       - name: Create Firebase credentials file
         run: |
-          echo "$GOOGLE_CREDENTIALS" > firebase-key.json
+          echo "$GOOGLE_CREDENTIALS" > "$GITHUB_WORKSPACE/firebase-key.json"
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
 
       - name: Deploy to Firebase Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
         run: |
           firebase deploy --only hosting --project power-monitor-ina219
