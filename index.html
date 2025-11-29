@@ -4,18 +4,19 @@
   <meta charset="UTF-8" />
   <title>INA219 Power Monitor Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css" />
-  <!-- Chart.js -->
+
+  <!-- Styles (nama file disesuaikan dengan repo: style.css) -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Chart.js untuk grafik realtime -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase v9 compat (app, auth, database) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <!-- TIDAK PERLU Firebase compat lagi
+       Semua Firebase di-import di app.js (modular) -->
 </head>
 <body>
   <div class="page-wrapper">
-    <!-- Sidebar / Header -->
+    <!-- Header -->
     <header class="app-header">
       <div class="logo">
         <span class="logo-dot"></span>
@@ -34,7 +35,7 @@
       <div class="auth-card">
         <h1>Login to Dashboard</h1>
         <p class="auth-subtitle">
-          Masuk dengan akun Firebase Auth (email & password) untuk mengakses
+          Masuk dengan akun Firebase Auth (email &amp; password) untuk mengakses
           monitoring tegangan, arus, dan daya INA219 secara realtime.
         </p>
 
@@ -143,6 +144,7 @@
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <!-- App logic: modular JS (di dalamnya ada import Firebase) -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
