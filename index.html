@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>INA219 Power Monitor Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase v9 compat (app, auth, database) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Sidebar / Header -->
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span class="logo-text">INA219 Monitor</span>
+      </div>
+      <nav class="nav-actions">
+        <div id="user-info" class="user-info hidden">
+          <span id="user-email"></span>
+          <button id="btn-logout" class="btn-outline">Logout</button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Auth Section -->
+    <main id="auth-section" class="auth-section">
+      <div class="auth-card">
+        <h1>Login to Dashboard</h1>
+        <p class="auth-subtitle">
+          Masuk dengan akun Firebase Auth (email & password) untuk mengakses
+          monitoring tegangan, arus, dan daya INA219 secara realtime.
+        </p>
+
+        <form id="login-form" class="auth-form">
+          <label class="form-group">
+            <span>Email</span>
+            <input type="email" id="login-email" required placeholder="you@example.com" />
+          </label>
+
+          <label class="form-group">
+            <span>Password</span>
+            <input type="password" id="login-password" required placeholder="••••••••" />
+          </label>
+
+          <button type="submit" class="btn-primary full-width">Login</button>
+          <p class="auth-hint">
+            Akun diatur di Firebase Console &gt; Authentication.
+          </p>
+          <p id="login-error" class="error-text hidden"></p>
+        </form>
+      </div>
+    </main>
+
+    <!-- Dashboard Section -->
+    <main id="dashboard-section" class="dashboard-section hidden">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-button active" data-tab="live-tab">Live Monitor</button>
+        <button class="tab-button" data-tab="history-tab">History</button>
+      </div>
+
+      <!-- Live Tab -->
+      <section id="live-tab" class="tab-content active">
+        <div class="cards-row">
+          <div class="metric-card">
+            <h3>Voltage</h3>
+            <div class="metric-value">
+              <span id="voltage-value">--</span>
+              <span class="metric-unit">V</span>
+            </div>
+            <p class="metric-label">Tegangan beban</p>
+          </div>
+
+          <div class="metric-card">
+            <h3>Current</h3>
+            <div class="metric-value">
+              <span id="current-value">--</span>
+              <span class="metric-unit">mA</span>
+            </div>
+            <p class="metric-label">Arus beban</p>
+          </div>
+
+          <div class="metric-card">
+            <h3>Power</h3>
+            <div class="metric-value">
+              <span id="power-value">--</span>
+              <span class="metric-unit">W</span>
+            </div>
+            <p class="metric-label">Daya real-time</p>
+          </div>
+
+          <div class="metric-card">
+            <h3>Last Update</h3>
+            <div class="metric-value small">
+              <span id="timestamp-value">--</span>
+            </div>
+            <p class="metric-label">Timestamp</p>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Realtime Trend</h3>
+            <span class="chart-subtitle">Voltage, Current, Power</span>
+          </div>
+          <canvas id="live-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- History Tab -->
+      <section id="history-tab" class="tab-content">
+        <div class="history-header">
+          <h3>History Log</h3>
+          <div class="history-actions">
+            <button id="btn-export-json" class="btn-outline small">Export JSON</button>
+            <button id="btn-export-csv" class="btn-outline small">Export CSV</button>
+          </div>
+        </div>
+
+        <div class="history-table-wrapper">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Voltage (V)</th>
+                <th>Current (mA)</th>
+                <th>Power (W)</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+              <!-- filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
