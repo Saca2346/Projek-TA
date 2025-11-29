@@ -140,18 +140,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 1 Auth ke Google Cloud pakai service account JSON dari secret
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      # 2 Install Firebase CLI
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Create Firebase credentials file
-        env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-        run: |
-          echo "$GOOGLE_CREDENTIALS" > "$GITHUB_WORKSPACE/firebase-key.json"
-          ls -l "$GITHUB_WORKSPACE/firebase-key.json"
-
+      # 3 Deploy ke Firebase Hosting
       - name: Deploy to Firebase Hosting
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
-        run: |
-          firebase deploy --only hosting --project power-monitor-ina219 --non-interactive
+        run: firebase deploy --only hosting --project power-monitor-ina219 --non-interactive
