@@ -10,7 +10,7 @@ on:
 
 jobs:
   # =======================================================
-  # 1) LINT (opsional – tidak akan fail kalau belum ada lint)
+  # 1 LINT (opsional – tidak akan fail kalau belum ada lint)
   # =======================================================
   lint:
     name: 🔍 Lint Code
@@ -134,7 +134,7 @@ jobs:
   deploy:
     name: 🚀 Deploy to Firebase Hosting
     runs-on: ubuntu-latest
-    needs: build   # deploy hanya jalan kalau build sukses
+    needs: build
 
     steps:
       - name: Checkout repository
@@ -144,13 +144,14 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Create Firebase credentials file
-        run: |
-          echo "$GOOGLE_CREDENTIALS" > "$GITHUB_WORKSPACE/firebase-key.json"
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > "$GITHUB_WORKSPACE/firebase-key.json"
+          ls -l "$GITHUB_WORKSPACE/firebase-key.json"
 
       - name: Deploy to Firebase Hosting
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
         run: |
-          firebase deploy --only hosting --project power-monitor-ina219
+          firebase deploy --only hosting --project power-monitor-ina219 --non-interactive
