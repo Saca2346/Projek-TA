@@ -1,41 +1,43 @@
 // =============================
-// 1. Firebase configuration (modular SDK v9+)
+// Firebase (modular v9+) via CDN
 // =============================
 
-// Using Firebase modular SDK via CDN ES module builds. This requires
-// including `app.js` with `<script type="module" src="app.js"></script>`
-// in your HTML, or bundling with a tool that supports ESM imports.
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
+// IMPORT LANGSUNG DARI CDN (tanpa bundler)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signOut
-} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+  signOut,
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
 import {
   getDatabase,
   ref,
   onValue,
   query,
-  limitToLast
-} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+  limitToLast,
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
 
-// Your web app's Firebase configuration (from your Firebase Console)
+// =============================
+// 1. Firebase configuration
+// =============================
+
 const firebaseConfig = {
   apiKey: "AIzaSyA0y6dzLy4OjaXAzz3GlPQURfJOCiObVWw",
   authDomain: "power-monitor-ina219.firebaseapp.com",
-  databaseURL: "https://power-monitor-ina219-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL:
+    "https://power-monitor-ina219-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "power-monitor-ina219",
-  storageBucket: "power-monitor-ina219.firebasestorage.app",
+  storageBucket: "power-monitor-ina219.appspot.com", // dibetulkan
   messagingSenderId: "552140214086",
   appId: "1:552140214086:web:dd75d389aa249a28089f47",
-  measurementId: "G-79CJQDWL2M"
+  measurementId: "G-79CJQDWL2M",
 };
 
-// Initialize Firebase
+// Init Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+getAnalytics(app);
 
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -68,9 +70,7 @@ const tabContents = document.querySelectorAll(".tab-content");
 
 // =============================
 // 3. Auth handlers
-// =============================
-
-// Listen auth state
+// ============================
 onAuthStateChanged(auth, (user) => {
   if (user) {
     // logged in
@@ -89,11 +89,10 @@ onAuthStateChanged(auth, (user) => {
     userEmailEl.textContent = "";
     loginError.classList.add("hidden");
     loginForm.reset();
-    // optionally: stop listeners later
-  }
+}
 });
 
-// Login form submit
+
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginError.classList.add("hidden");
@@ -111,12 +110,12 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-// Logout
+
 logoutBtn.addEventListener("click", async () => {
   await signOut(auth);
 });
 
-// Simple error translator
+
 function translateAuthError(err) {
   if (!err || !err.code) return "Login gagal. Periksa kembali data Anda.";
   switch (err.code) {
@@ -155,7 +154,7 @@ const chartData = {
   labels: [],
   voltage: [],
   current: [],
-  power: []
+  power: [],
 };
 
 const liveChart = new Chart(ctx, {
@@ -167,21 +166,21 @@ const liveChart = new Chart(ctx, {
         label: "Voltage (V)",
         data: chartData.voltage,
         borderWidth: 2,
-        tension: 0.25
+        tension: 0.25,
       },
       {
         label: "Current (mA)",
         data: chartData.current,
         borderWidth: 2,
-        tension: 0.25
+        tension: 0.25,
       },
       {
         label: "Power (W)",
         data: chartData.power,
         borderWidth: 2,
-        tension: 0.25
-      }
-    ]
+        tension: 0.25,
+      },
+    ],
   },
   options: {
     responsive: true,
@@ -190,25 +189,25 @@ const liveChart = new Chart(ctx, {
       legend: {
         labels: {
           color: "#e5e7eb",
-          font: { size: 11 }
-        }
-      }
+          font: { size: 11 },
+        },
+      },
     },
     scales: {
       x: {
         ticks: {
           color: "#9ca3af",
           maxRotation: 0,
-          autoSkip: true
+          autoSkip: true,
         },
-        grid: { color: "rgba(31,41,55,0.4)" }
+        grid: { color: "rgba(31,41,55,0.4)" },
       },
       y: {
         ticks: { color: "#9ca3af" },
-        grid: { color: "rgba(31,41,55,0.4)" }
-      }
-    }
-  }
+        grid: { color: "rgba(31,41,55,0.4)" },
+      },
+    },
+  },
 });
 
 function pushChartPoint(tsLabel, v, i, p) {
@@ -238,8 +237,7 @@ function subscribeSensorData() {
   if (sensorListenerAttached) return;
   sensorListenerAttached = true;
 
-  // Struktur yang disarankan di Realtime DB:
-  // ina219/latest: { voltage, current, power, timestamp }
+
   const sensorRef = ref(db, "ina219/latest");
 
   onValue(sensorRef, (snap) => {
@@ -274,11 +272,9 @@ function subscribeHistory() {
   if (historyListenerAttached) return;
   historyListenerAttached = true;
 
-  // Struktur yang disarankan:
-  // ina219/history/<auto_id>: { voltage, current, power, timestamp }
-  const historyRef = query(ref(db, "ina219/history"), limitToLast(200));
+  const historyQ = query(ref(db, "ina219/history"), limitToLast(200));
 
-  onValue(historyRef, (snap) => {
+  onValue(historyQ, (snap) => {
     const val = snap.val() || {};
     const rows = [];
 
@@ -298,7 +294,7 @@ function subscribeHistory() {
           timestamp: tsMs,
           voltage,
           current,
-          power
+          power,
         });
       });
 
@@ -322,7 +318,7 @@ function renderHistoryTable(rows) {
 
   rows
     .slice()
-    .reverse() // tampilkan terbaru di atas
+    .reverse()
     .forEach((row) => {
       const tr = document.createElement("tr");
 
@@ -348,9 +344,7 @@ function renderHistoryTable(rows) {
 }
 
 // =============================
-// 8. Export JSON & CSV
-// =============================
-
+// 8. Export JSON & CS// =============================
 btnExportJson.addEventListener("click", () => {
   if (!historyCache.length) return;
   const data = historyCache.map((row) => ({
@@ -358,11 +352,11 @@ btnExportJson.addEventListener("click", () => {
     timestamp_iso: new Date(row.timestamp).toISOString(),
     voltage: row.voltage,
     current: row.current,
-    power: row.power
+    power: row.power,
   }));
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json"
+    type: "application/json",
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -375,7 +369,13 @@ btnExportJson.addEventListener("click", () => {
 btnExportCsv.addEventListener("click", () => {
   if (!historyCache.length) return;
 
-  const header = ["timestamp_ms", "timestamp_iso", "voltage_V", "current_mA", "power_W"];
+  const header = [
+    "timestamp_ms",
+    "timestamp_iso",
+    "voltage_V",
+    "current_mA",
+    "power_W",
+  ];
   const lines = [header.join(",")];
 
   historyCache.forEach((row) => {
@@ -386,7 +386,7 @@ btnExportCsv.addEventListener("click", () => {
         tsIso,
         row.voltage.toFixed(2),
         row.current.toFixed(0),
-        row.power.toFixed(2)
+        row.power.toFixed(2),
       ].join(",")
     );
   });
@@ -399,8 +399,8 @@ btnExportCsv.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
 });
-// live data
-const sensorRef = db.ref("ina219/latest");
 
-// history
-const historyRef = db.ref("ina219/history").limitToLast(200);
+
+
+
+
