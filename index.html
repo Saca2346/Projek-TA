@@ -11,7 +11,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase compat (v9) -->
+  <!-- Firebase COMPAT (bukan modular) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -24,7 +24,7 @@
         <span class="logo-dot"></span>
         <div class="logo-text-group">
           <span class="logo-text">INA219 Power Monitor</span>
-          <span class="logo-sub">ESP32 · Firebase · Realtime Dashboard</span>
+          <span class="logo-sub">ESP32 · INA219 · Firebase Realtime Dashboard</span>
         </div>
       </div>
       <nav class="nav-actions">
@@ -38,25 +38,36 @@
     <!-- AUTH SECTION -->
     <main id="auth-section" class="auth-section">
       <div class="auth-card">
-        <h1>Login to Dashboard</h1>
+        <h1>Login to Power Monitor</h1>
         <p class="auth-subtitle">
-          Masuk dengan akun Firebase (Email &amp; Password) untuk mengakses monitoring tegangan, arus, dan daya secara realtime.
+          Masuk dengan akun Firebase (Email &amp; Password) untuk mengakses
+          monitoring tegangan, arus, dan daya INA219 secara realtime.
         </p>
 
         <form id="login-form" class="auth-form">
           <label class="form-group">
             <span>Email</span>
-            <input type="email" id="login-email" required placeholder="you@example.com" />
+            <input
+              type="email"
+              id="login-email"
+              required
+              placeholder="you@example.com"
+            />
           </label>
 
           <label class="form-group">
             <span>Password</span>
-            <input type="password" id="login-password" required placeholder="••••••••" />
+            <input
+              type="password"
+              id="login-password"
+              required
+              placeholder="••••••••"
+            />
           </label>
 
           <button type="submit" class="btn-primary full-width">Login</button>
           <p class="auth-hint">
-            Akun diatur di Firebase Console &gt; Authentication.
+            Akun diatur di Firebase Console &gt; Authentication &gt; Email/Password.
           </p>
           <p id="login-error" class="error-text hidden"></p>
         </form>
@@ -65,11 +76,13 @@
 
     <!-- DASHBOARD SECTION -->
     <main id="dashboard-section" class="dashboard-section hidden">
-      <!-- Status bar -->
+      <!-- STATUS BAR -->
       <section class="status-bar">
         <div class="status-item">
           <span class="status-label">Status Koneksi</span>
-          <span id="status-conn" class="status-pill status-offline">Offline</span>
+          <span id="status-conn" class="status-pill status-offline">
+            Offline
+          </span>
         </div>
         <div class="status-item">
           <span class="status-label">Interval Pembacaan</span>
@@ -81,7 +94,7 @@
         </div>
       </section>
 
-      <!-- Cards -->
+      <!-- LIVE CARDS -->
       <section class="cards-row">
         <div class="metric-card">
           <h3>Voltage</h3>
@@ -115,18 +128,22 @@
           <div class="metric-value small">
             <span id="timestamp-value">--</span>
           </div>
-          <p class="metric-label">Timestamp</p>
+          <p class="metric-label">Timestamp (detik)</p>
         </div>
       </section>
 
-      <!-- Charts -->
+      <!-- CHARTS -->
       <section class="charts-section">
         <div class="chart-card wide">
           <div class="chart-header">
             <h3>Combined Realtime Trend</h3>
-            <span class="chart-subtitle">Voltage (V), Current (mA), Power (W)</span>
+            <span class="chart-subtitle">
+              Voltage (V), Current (mA), Power (W)
+            </span>
           </div>
-          <canvas id="combined-chart"></canvas>
+          <div style="height: 260px;">
+            <canvas id="combined-chart"></canvas>
+          </div>
         </div>
 
         <div class="chart-row">
@@ -135,7 +152,9 @@
               <h3>Voltage Only</h3>
               <span class="chart-subtitle">Tegangan terhadap waktu</span>
             </div>
-            <canvas id="voltage-chart"></canvas>
+            <div style="height: 180px;">
+              <canvas id="voltage-chart"></canvas>
+            </div>
           </div>
 
           <div class="chart-card">
@@ -143,17 +162,21 @@
               <h3>Power Only</h3>
               <span class="chart-subtitle">Daya terhadap waktu</span>
             </div>
-            <canvas id="power-chart"></canvas>
+            <div style="height: 180px;">
+              <canvas id="power-chart"></canvas>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- History -->
+      <!-- HISTORY -->
       <section class="history-section">
         <div class="history-header">
           <h3>History Log</h3>
           <div class="history-actions">
-            <button id="btn-export-json" class="btn-outline small">Export JSON</button>
+            <button id="btn-export-json" class="btn-outline small">
+              Export JSON
+            </button>
           </div>
         </div>
         <div class="history-table-wrapper">
@@ -173,7 +196,7 @@
         </div>
       </section>
 
-      <!-- Info panel -->
+      <!-- INFO PANEL -->
       <section class="info-panel">
         <h3>Apa yang ditampilkan di dashboard ini?</h3>
         <p>
@@ -181,13 +204,19 @@
           <strong>INA219</strong> pada rangkaian Anda.
         </p>
         <ul>
-          <li><strong>Voltage (V)</strong> – seberapa besar tegangan yang diberikan ke beban.</li>
-          <li><strong>Current (mA)</strong> – seberapa besar arus yang mengalir melalui beban.</li>
-          <li><strong>Power (W)</strong> – tegangan × arus, menggambarkan daya listrik yang dipakai.</li>
+          <li>
+            <strong>Voltage (V)</strong> – seberapa besar tegangan yang diberikan ke beban.
+          </li>
+          <li>
+            <strong>Current (mA)</strong> – seberapa besar arus yang mengalir melalui beban.
+          </li>
+          <li>
+            <strong>Power (W)</strong> – tegangan × arus, menggambarkan daya listrik yang dipakai.
+          </li>
         </ul>
         <p>
           Nilai-nilai ini diperbarui otomatis dari ESP32 melalui Firebase Realtime Database.
-          Jika angka tidak bergerak lama, periksa koneksi WiFi atau suplai daya rangkaian.
+          Jika angka tidak bergerak, periksa koneksi WiFi atau suplai daya rangkaian.
         </p>
       </section>
     </main>
