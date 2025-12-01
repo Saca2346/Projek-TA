@@ -1,50 +1,23 @@
-// =============================
-// Firebase (modular v9+) via CDN
-// =============================
-
-// IMPORT LANGSUNG DARI CDN (tanpa bundler)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  onValue,
-  query,
-  limitToLast,
-} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
-
-// =============================
-// 1. Firebase configuration
-// =============================
-
+// =========================
+// Firebase Config
+// =========================
 const firebaseConfig = {
-  apiKey: "AIzaSyA0y6dzLy4OjaXAzz3GlPQURfJOCiObVWw",
-  authDomain: "power-monitor-ina219.firebaseapp.com",
-  databaseURL:
-    "https://power-monitor-ina219-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "power-monitor-ina219",
-  storageBucket: "power-monitor-ina219.appspot.com", // dibetulkan
-  messagingSenderId: "552140214086",
-  appId: "1:552140214086:web:dd75d389aa249a28089f47",
-  measurementId: "G-79CJQDWL2M",
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://power-monitor-ina219-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
 };
 
-// Init Firebase
-const app = initializeApp(firebaseConfig);
-getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
 
-const auth = getAuth(app);
-const db = getDatabase(app);
-
-// =============================
-// 2. DOM elements
-// =============================
+// =========================
+// DOM ELEMENTS
+// =========================
 const authSection = document.getElementById("auth-section");
 const dashboardSection = document.getElementById("dashboard-section");
 const loginForm = document.getElementById("login-form");
@@ -56,6 +29,8 @@ const userInfo = document.getElementById("user-info");
 const userEmailEl = document.getElementById("user-email");
 const logoutBtn = document.getElementById("btn-logout");
 
+const statusConnEl = document.getElementById("status-conn");
+
 const voltageEl = document.getElementById("voltage-value");
 const currentEl = document.getElementById("current-value");
 const powerEl = document.getElementById("power-value");
@@ -63,46 +38,178 @@ const tsEl = document.getElementById("timestamp-value");
 
 const historyBody = document.getElementById("history-body");
 const btnExportJson = document.getElementById("btn-export-json");
-const btnExportCsv = document.getElementById("btn-export-csv");
 
-const tabButtons = document.querySelectorAll(".tab-button");
-const tabContents = document.querySelectorAll(".tab-content");
+// =========================
+// CHART SETUP
+// =========================
+const maxPoints = 50;
+let labels = [];
+let voltageData = [];
+let currentData = [];
+let powerData = [];
 
-// =============================
-// 3. Auth handlers
-// ============================
-onAuthStateChanged(auth, (user) => {
+// Combined chart
+const combinedCtx = document.getElementById("combined-chart").getContext("2d");
+const combinedChart = new Chart(combinedCtx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [
+      {
+        label: "Voltage (V)",
+        data: voltageData,
+        borderWidth: 1.5,
+        borderColor: "rgba(56,189,248,0.9)",
+        pointRadius: 0,
+        tension: 0.3,
+      },
+      {
+        label: "Current (mA)",
+        data: currentData,
+        borderWidth: 1.2,
+        borderColor: "rgba(251,191,36,0.9)",
+        pointRadius: 0,
+        tension: 0.3,
+      },
+      {
+        label: "Power (W)",
+        data: powerData,
+        borderWidth: 1.5,
+        borderColor: "rgba(34,197,94,0.9)",
+        pointRadius: 0,
+        tension: 0.3,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        ticks: { display: true, maxTicksLimit: 6 },
+        grid: { display: false },
+      },
+      y: {
+        grid: { color: "rgba(51,65,85,0.4)" },
+      },
+    },
+    plugins: {
+      legend: { labels: { color: "#e5e7eb", font: { size: 10 } } },
+    },
+  },
+});
+
+// Voltage-only chart
+const voltageCtx = document.getElementById("voltage-chart").getContext("2d");
+const voltageChart = new Chart(voltageCtx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [
+      {
+        label: "Voltage (V)",
+        data: voltageData,
+        borderWidth: 1.8,
+        borderColor: "rgba(56,189,248,0.9)",
+        pointRadius: 0,
+        tension: 0.3,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { display: false }, grid: { display: false } },
+      y: { grid: { color: "rgba(51,65,85,0.4)" } },
+    },
+    plugins: {
+      legend: { labels: { color: "#e5e7eb", font: { size: 10 } } },
+    },
+  },
+});
+
+// Power-only chart
+const powerCtx = document.getElementById("power-chart").getContext("2d");
+const powerChart = new Chart(powerCtx, {
+  type: "line",
+  data: {
+    labels,
+    datasets: [
+      {
+        label: "Power (W)",
+        data: powerData,
+        borderWidth: 1.8,
+        borderColor: "rgba(34,197,94,0.9)",
+        pointRadius: 0,
+        tension: 0.3,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { display: false }, grid: { display: false } },
+      y: { grid: { color: "rgba(51,65,85,0.4)" } },
+    },
+    plugins: {
+      legend: { labels: { color: "#e5e7eb", font: { size: 10 } } },
+    },
+  },
+});
+
+// Helper: tambah titik data
+function addDataPoint(label, v, i, p) {
+  labels.push(label);
+  voltageData.push(v);
+  currentData.push(i);
+  powerData.push(p);
+
+  if (labels.length > maxPoints) {
+    labels.shift();
+    voltageData.shift();
+    currentData.shift();
+    powerData.shift();
+  }
+
+  combinedChart.update();
+  voltageChart.update();
+  powerChart.update();
+}
+
+// =========================
+// AUTH
+// =========================
+auth.onAuthStateChanged((user) => {
   if (user) {
-    // logged in
+    // Logged in
     authSection.classList.add("hidden");
     dashboardSection.classList.remove("hidden");
     userInfo.classList.remove("hidden");
-    userEmailEl.textContent = user.email || "Logged in";
+    userEmailEl.textContent = user.email || "";
+    setConnectionStatus(true);
 
-    subscribeSensorData();
-    subscribeHistory();
+    // Mulai subscribe data
+    attachRealtimeListeners();
   } else {
-    // logged out
+    // Logged out
     authSection.classList.remove("hidden");
     dashboardSection.classList.add("hidden");
     userInfo.classList.add("hidden");
     userEmailEl.textContent = "";
-    loginError.classList.add("hidden");
-    loginForm.reset();
-}
+    setConnectionStatus(false);
+  }
 });
-
 
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginError.classList.add("hidden");
-  loginError.textContent = "";
-
   const email = loginEmail.value.trim();
-  const pass = loginPassword.value;
+  const pass = loginPassword.value.trim();
 
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await auth.signInWithEmailAndPassword(email, pass);
   } catch (err) {
     console.error(err);
     loginError.textContent = translateAuthError(err);
@@ -110,297 +217,109 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-
 logoutBtn.addEventListener("click", async () => {
-  await signOut(auth);
+  await auth.signOut();
 });
-
 
 function translateAuthError(err) {
-  if (!err || !err.code) return "Login gagal. Periksa kembali data Anda.";
-  switch (err.code) {
-    case "auth/user-not-found":
-      return "User tidak ditemukan.";
-    case "auth/wrong-password":
-      return "Password salah.";
-    case "auth/invalid-email":
-      return "Format email tidak valid.";
-    default:
-      return err.message || "Login gagal.";
+  if (!err || !err.code) return "Login gagal. Periksa kembali email dan password.";
+  if (err.code === "auth/user-not-found") return "User tidak ditemukan.";
+  if (err.code === "auth/wrong-password") return "Password salah.";
+  if (err.code === "auth/invalid-email") return "Format email tidak valid.";
+  return "Login gagal: " + err.message;
+}
+
+function setConnectionStatus(isOnline) {
+  if (!statusConnEl) return;
+  statusConnEl.classList.remove("status-online", "status-offline");
+  if (isOnline) {
+    statusConnEl.textContent = "Online";
+    statusConnEl.classList.add("status-online");
+  } else {
+    statusConnEl.textContent = "Offline";
+    statusConnEl.classList.add("status-offline");
   }
 }
 
-// =============================
-// 4. Tabs (Live / History)
-// =============================
-tabButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const target = btn.dataset.tab;
-    tabButtons.forEach((b) => b.classList.remove("active"));
-    tabContents.forEach((c) => c.classList.remove("active"));
-
-    btn.classList.add("active");
-    document.getElementById(target).classList.add("active");
-  });
-});
-
-// =============================
-// 5. Chart.js setup
-// =============================
-const ctx = document.getElementById("live-chart").getContext("2d");
-
-const maxPoints = 40;
-const chartData = {
-  labels: [],
-  voltage: [],
-  current: [],
-  power: [],
-};
-
-const liveChart = new Chart(ctx, {
-  type: "line",
-  data: {
-    labels: chartData.labels,
-    datasets: [
-      {
-        label: "Voltage (V)",
-        data: chartData.voltage,
-        borderWidth: 2,
-        tension: 0.25,
-      },
-      {
-        label: "Current (mA)",
-        data: chartData.current,
-        borderWidth: 2,
-        tension: 0.25,
-      },
-      {
-        label: "Power (W)",
-        data: chartData.power,
-        borderWidth: 2,
-        tension: 0.25,
-      },
-    ],
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        labels: {
-          color: "#e5e7eb",
-          font: { size: 11 },
-        },
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: "#9ca3af",
-          maxRotation: 0,
-          autoSkip: true,
-        },
-        grid: { color: "rgba(31,41,55,0.4)" },
-      },
-      y: {
-        ticks: { color: "#9ca3af" },
-        grid: { color: "rgba(31,41,55,0.4)" },
-      },
-    },
-  },
-});
-
-function pushChartPoint(tsLabel, v, i, p) {
-  chartData.labels.push(tsLabel);
-  chartData.voltage.push(v);
-  chartData.current.push(i);
-  chartData.power.push(p);
-
-  if (chartData.labels.length > maxPoints) {
-    chartData.labels.shift();
-    chartData.voltage.shift();
-    chartData.current.shift();
-    chartData.power.shift();
-  }
-
-  liveChart.update("none");
-}
-
-// =============================
-// 6. Subscribe to sensor data
-// =============================
-
-let sensorListenerAttached = false;
-let historyListenerAttached = false;
-
-function subscribeSensorData() {
-  if (sensorListenerAttached) return;
-  sensorListenerAttached = true;
-
-
-  const sensorRef = ref(db, "ina219/latest");
-
-  onValue(sensorRef, (snap) => {
-    const val = snap.val();
-    if (!val) return;
-
-    const voltage = Number(val.voltage || 0);
-    const current = Number(val.current || 0);
-    const power = Number(val.power || 0);
-    const tsMs =
-      typeof val.timestamp === "number"
-        ? val.timestamp * 1000
-        : Date.parse(val.timestamp) || Date.now();
-
-    voltageEl.textContent = voltage.toFixed(2);
-    currentEl.textContent = current.toFixed(0);
-    powerEl.textContent = power.toFixed(2);
-    tsEl.textContent = new Date(tsMs).toLocaleString();
-
-    const label = new Date(tsMs).toLocaleTimeString();
-    pushChartPoint(label, voltage, current, power);
-  });
-}
-
-// =============================
-// 7. Subscribe to history data
-// =============================
-
+// =========================
+// REALTIME DATABASE
+// =========================
+let listenersAttached = false;
 let historyCache = [];
 
-function subscribeHistory() {
-  if (historyListenerAttached) return;
-  historyListenerAttached = true;
+function attachRealtimeListeners() {
+  if (listenersAttached) return;
+  listenersAttached = true;
 
-  const historyQ = query(ref(db, "ina219/history"), limitToLast(200));
+  // Latest
+  const latestRef = db.ref("ina219/latest");
 
-  onValue(historyQ, (snap) => {
-    const val = snap.val() || {};
-    const rows = [];
+  latestRef.on("value", (snap) => {
+    const data = snap.val();
+    if (!data) return;
 
-    Object.keys(val)
-      .sort()
-      .forEach((key) => {
-        const item = val[key];
-        const voltage = Number(item.voltage || 0);
-        const current = Number(item.current || 0);
-        const power = Number(item.power || 0);
-        const tsMs =
-          typeof item.timestamp === "number"
-            ? item.timestamp * 1000
-            : Date.parse(item.timestamp) || Date.now();
+    const v = Number(data.voltage ?? 0);
+    const i = Number(data.current ?? 0);
+    const p = Number(data.power ?? 0);
+    const t = data.timestamp ?? 0;
 
-        rows.push({
-          timestamp: tsMs,
-          voltage,
-          current,
-          power,
-        });
-      });
+    voltageEl.textContent = v.toFixed(2);
+    currentEl.textContent = i.toFixed(0);
+    powerEl.textContent = p.toFixed(2);
 
-    historyCache = rows;
-    renderHistoryTable(rows);
+    const label = formatTimestamp(t);
+    tsEl.textContent = label;
+
+    addDataPoint(label, v, i, p);
+  });
+
+  // History
+  const historyRef = db.ref("ina219/history").limitToLast(100);
+  historyRef.on("value", (snap) => {
+    historyCache = [];
+    historyBody.innerHTML = "";
+    snap.forEach((child) => {
+      const d = child.val() || {};
+      historyCache.push(d);
+    });
+
+    historyCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    for (const row of historyCache) {
+      const tr = document.createElement("tr");
+      const label = formatTimestamp(row.timestamp || 0);
+
+      tr.innerHTML = `
+        <td>${label}</td>
+        <td>${Number(row.voltage ?? 0).toFixed(2)}</td>
+        <td>${Number(row.current ?? 0).toFixed(0)}</td>
+        <td>${Number(row.power ?? 0).toFixed(2)}</td>
+      `;
+      historyBody.appendChild(tr);
+    }
   });
 }
 
-function renderHistoryTable(rows) {
-  historyBody.innerHTML = "";
-  if (!rows.length) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 4;
-    td.textContent = "Belum ada data history.";
-    td.style.textAlign = "center";
-    tr.appendChild(td);
-    historyBody.appendChild(tr);
-    return;
-  }
-
-  rows
-    .slice()
-    .reverse()
-    .forEach((row) => {
-      const tr = document.createElement("tr");
-
-      const tsTd = document.createElement("td");
-      tsTd.textContent = new Date(row.timestamp).toLocaleString();
-
-      const vTd = document.createElement("td");
-      vTd.textContent = row.voltage.toFixed(2);
-
-      const iTd = document.createElement("td");
-      iTd.textContent = row.current.toFixed(0);
-
-      const pTd = document.createElement("td");
-      pTd.textContent = row.power.toFixed(2);
-
-      tr.appendChild(tsTd);
-      tr.appendChild(vTd);
-      tr.appendChild(iTd);
-      tr.appendChild(pTd);
-
-      historyBody.appendChild(tr);
-    });
+function formatTimestamp(ts) {
+  // ts dari ESP32: detik sejak boot -> di sini sekadar tampil detik
+  if (!ts) return "--";
+  // Kalau nanti pakai timestamp UNIX (detik epoch), tinggal ubah ke Date.
+  return ts + " s";
 }
 
-// =============================
-// 8. Export JSON & CS// =============================
+// =========================
+// EXPORT JSON
+// =========================
 btnExportJson.addEventListener("click", () => {
-  if (!historyCache.length) return;
-  const data = historyCache.map((row) => ({
-    timestamp: row.timestamp,
-    timestamp_iso: new Date(row.timestamp).toISOString(),
-    voltage: row.voltage,
-    current: row.current,
-    power: row.power,
-  }));
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
+  const blob = new Blob([JSON.stringify(historyCache, null, 2)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "ina219-history.json";
+  a.download = "ina219_history.json";
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
-
-btnExportCsv.addEventListener("click", () => {
-  if (!historyCache.length) return;
-
-  const header = [
-    "timestamp_ms",
-    "timestamp_iso",
-    "voltage_V",
-    "current_mA",
-    "power_W",
-  ];
-  const lines = [header.join(",")];
-
-  historyCache.forEach((row) => {
-    const tsIso = new Date(row.timestamp).toISOString();
-    lines.push(
-      [
-        row.timestamp,
-        tsIso,
-        row.voltage.toFixed(2),
-        row.current.toFixed(0),
-        row.power.toFixed(2),
-      ].join(",")
-    );
-  });
-
-  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "ina219-history.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
-
-
-
-

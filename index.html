@@ -5,22 +5,27 @@
   <title>INA219 Power Monitor Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Styles (nama file disesuaikan dengan repo: style.css) -->
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Chart.js untuk grafik realtime -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- TIDAK PERLU Firebase compat lagi
-       Semua Firebase di-import di app.js (modular) -->
+  <!-- Firebase compat (v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div class="page-wrapper">
-    <!-- Header -->
+    <!-- HEADER -->
     <header class="app-header">
       <div class="logo">
         <span class="logo-dot"></span>
-        <span class="logo-text">INA219 Monitor</span>
+        <div class="logo-text-group">
+          <span class="logo-text">INA219 Power Monitor</span>
+          <span class="logo-sub">ESP32 · Firebase · Realtime Dashboard</span>
+        </div>
       </div>
       <nav class="nav-actions">
         <div id="user-info" class="user-info hidden">
@@ -30,13 +35,12 @@
       </nav>
     </header>
 
-    <!-- Auth Section -->
+    <!-- AUTH SECTION -->
     <main id="auth-section" class="auth-section">
       <div class="auth-card">
         <h1>Login to Dashboard</h1>
         <p class="auth-subtitle">
-          Masuk dengan akun Firebase Auth (email &amp; password) untuk mengakses
-          monitoring tegangan, arus, dan daya INA219 secara realtime.
+          Masuk dengan akun Firebase (Email &amp; Password) untuk mengakses monitoring tegangan, arus, dan daya secara realtime.
         </p>
 
         <form id="login-form" class="auth-form">
@@ -59,72 +63,99 @@
       </div>
     </main>
 
-    <!-- Dashboard Section -->
+    <!-- DASHBOARD SECTION -->
     <main id="dashboard-section" class="dashboard-section hidden">
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-button active" data-tab="live-tab">Live Monitor</button>
-        <button class="tab-button" data-tab="history-tab">History</button>
-      </div>
-
-      <!-- Live Tab -->
-      <section id="live-tab" class="tab-content active">
-        <div class="cards-row">
-          <div class="metric-card">
-            <h3>Voltage</h3>
-            <div class="metric-value">
-              <span id="voltage-value">--</span>
-              <span class="metric-unit">V</span>
-            </div>
-            <p class="metric-label">Tegangan beban</p>
-          </div>
-
-          <div class="metric-card">
-            <h3>Current</h3>
-            <div class="metric-value">
-              <span id="current-value">--</span>
-              <span class="metric-unit">mA</span>
-            </div>
-            <p class="metric-label">Arus beban</p>
-          </div>
-
-          <div class="metric-card">
-            <h3>Power</h3>
-            <div class="metric-value">
-              <span id="power-value">--</span>
-              <span class="metric-unit">W</span>
-            </div>
-            <p class="metric-label">Daya real-time</p>
-          </div>
-
-          <div class="metric-card">
-            <h3>Last Update</h3>
-            <div class="metric-value small">
-              <span id="timestamp-value">--</span>
-            </div>
-            <p class="metric-label">Timestamp</p>
-          </div>
+      <!-- Status bar -->
+      <section class="status-bar">
+        <div class="status-item">
+          <span class="status-label">Status Koneksi</span>
+          <span id="status-conn" class="status-pill status-offline">Offline</span>
         </div>
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <h3>Realtime Trend</h3>
-            <span class="chart-subtitle">Voltage, Current, Power</span>
-          </div>
-          <canvas id="live-chart"></canvas>
+        <div class="status-item">
+          <span class="status-label">Interval Pembacaan</span>
+          <span class="status-value">~ 2 detik</span>
+        </div>
+        <div class="status-item hide-mobile">
+          <span class="status-label">Sumber Data</span>
+          <span class="status-value">ESP32 + INA219</span>
         </div>
       </section>
 
-      <!-- History Tab -->
-      <section id="history-tab" class="tab-content">
+      <!-- Cards -->
+      <section class="cards-row">
+        <div class="metric-card">
+          <h3>Voltage</h3>
+          <div class="metric-value">
+            <span id="voltage-value">--</span>
+            <span class="metric-unit">V</span>
+          </div>
+          <p class="metric-label">Tegangan beban</p>
+        </div>
+
+        <div class="metric-card">
+          <h3>Current</h3>
+          <div class="metric-value">
+            <span id="current-value">--</span>
+            <span class="metric-unit">mA</span>
+          </div>
+          <p class="metric-label">Arus beban</p>
+        </div>
+
+        <div class="metric-card">
+          <h3>Power</h3>
+          <div class="metric-value">
+            <span id="power-value">--</span>
+            <span class="metric-unit">W</span>
+          </div>
+          <p class="metric-label">Daya realtime</p>
+        </div>
+
+        <div class="metric-card">
+          <h3>Last Update</h3>
+          <div class="metric-value small">
+            <span id="timestamp-value">--</span>
+          </div>
+          <p class="metric-label">Timestamp</p>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section class="charts-section">
+        <div class="chart-card wide">
+          <div class="chart-header">
+            <h3>Combined Realtime Trend</h3>
+            <span class="chart-subtitle">Voltage (V), Current (mA), Power (W)</span>
+          </div>
+          <canvas id="combined-chart"></canvas>
+        </div>
+
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Voltage Only</h3>
+              <span class="chart-subtitle">Tegangan terhadap waktu</span>
+            </div>
+            <canvas id="voltage-chart"></canvas>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Power Only</h3>
+              <span class="chart-subtitle">Daya terhadap waktu</span>
+            </div>
+            <canvas id="power-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section class="history-section">
         <div class="history-header">
           <h3>History Log</h3>
           <div class="history-actions">
             <button id="btn-export-json" class="btn-outline small">Export JSON</button>
-            <button id="btn-export-csv" class="btn-outline small">Export CSV</button>
           </div>
         </div>
-
         <div class="history-table-wrapper">
           <table class="history-table">
             <thead>
@@ -141,10 +172,28 @@
           </table>
         </div>
       </section>
+
+      <!-- Info panel -->
+      <section class="info-panel">
+        <h3>Apa yang ditampilkan di dashboard ini?</h3>
+        <p>
+          Dashboard ini menampilkan kondisi listrik yang diukur sensor
+          <strong>INA219</strong> pada rangkaian Anda.
+        </p>
+        <ul>
+          <li><strong>Voltage (V)</strong> – seberapa besar tegangan yang diberikan ke beban.</li>
+          <li><strong>Current (mA)</strong> – seberapa besar arus yang mengalir melalui beban.</li>
+          <li><strong>Power (W)</strong> – tegangan × arus, menggambarkan daya listrik yang dipakai.</li>
+        </ul>
+        <p>
+          Nilai-nilai ini diperbarui otomatis dari ESP32 melalui Firebase Realtime Database.
+          Jika angka tidak bergerak lama, periksa koneksi WiFi atau suplai daya rangkaian.
+        </p>
+      </section>
     </main>
   </div>
 
-  <!-- App logic: modular JS (di dalamnya ada import Firebase) -->
-  <script type="module" src="app.js"></script>
+  <!-- App logic -->
+  <script src="app.js"></script>
 </body>
 </html>
